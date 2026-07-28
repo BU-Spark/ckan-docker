@@ -70,3 +70,18 @@ The local CKAN endpoint is `https://127.0.0.1:18443`. `start` builds only the
 nginx and PostgreSQL support images from the current checkout and pulls the
 immutable public CKAN image. `logs` accepts extra `podman compose logs`
 arguments, for example `bin/local-smoke logs -f ckan`.
+
+After the stack has run for an hour, `bin/hourly-smoke-check` records health
+and resource use, creates a dataset, uploads a small CSV, confirms search, and
+waits for DataStore ingestion. It keeps the dataset for inspection and writes
+a private report under the smoke state directory.
+
+Schedule the check from the host user session:
+
+```bash
+systemd-run --user \
+  --unit=data-at-spark-smoke-hourly-check \
+  --on-active=1h \
+  --collect \
+  /absolute/path/to/data-at-spark/ansible/bin/hourly-smoke-check
+```
