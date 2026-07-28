@@ -1,0 +1,32 @@
+---
+- name: Render the disposable local Data@Spark smoke runtime
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  tasks:
+    - name: Check local smoke inputs
+      ansible.builtin.assert:
+        that:
+          - data_at_spark_smoke_source_root is match('^/')
+          - data_at_spark_smoke_state_root is match('^/')
+        fail_msg: Local smoke paths must be absolute.
+
+    - name: Create the private smoke runtime root
+      ansible.builtin.file:
+        path: "{{ data_at_spark_smoke_state_root }}"
+        state: directory
+        mode: '0700'
+
+    - name: Render the shared runtime role
+      ansible.builtin.include_role:
+        name: data_at_spark_runtime
+
+    - name: Link only local support-image build contexts
+      ansible.builtin.file:
+        src: "{{ data_at_spark_smoke_source_root }}/{{ item }}"
+        dest: "{{ data_at_spark_environments[0].source_checkout }}/{{ item }}"
+        state: link
+        force: true
+      loop:
+        - nginx
+        - postgresql

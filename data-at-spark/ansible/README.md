@@ -15,7 +15,7 @@ characters>`.
 
 Real inventories and `data_at_spark_secrets` stay outside Git. The role writes
 them to the managed host's `.env` with mode `0600`. Git contains no values.
-repository. A production Caddyfile must import the rendered Caddy fragment.
+A production Caddyfile must import the rendered Caddy fragment.
 
 Validate the contract without a managed host or credentials:
 
@@ -40,3 +40,33 @@ TLS listener and disables upstream certificate verification only for that local
 hop. The runtime service builds only the nginx and PostgreSQL
 support images from its verified checkout; the CKAN service has no build stanza
 and remains digest-pinned.
+
+## Local smoke test
+
+`bin/local-smoke` prepares a single disposable local runtime without a cloud
+account or external credentials. It uses the same runtime role and Compose
+template as a host deployment, but renders into a private state directory and
+uses a loopback-only TLS port. It never deletes named volumes.
+
+Prerequisites are `ansible-playbook`, rootless `podman` with `podman compose`,
+`openssl`, and (for `start`) permission to pull public container images. The
+first `render` generates hexadecimal-only disposable values under
+`${XDG_STATE_HOME:-$HOME/.local/state}/data-at-spark-smoke`; do not reuse that
+directory for a real environment.
+
+Run `start` from the host shell. The script refuses to start inside a container
+or distrobox because rootless Podman DNS needs the host user systemd manager.
+
+```bash
+bin/local-smoke render
+bin/local-smoke start
+bin/local-smoke status
+bin/local-smoke measure
+bin/local-smoke logs
+bin/local-smoke stop
+```
+
+The local CKAN endpoint is `https://127.0.0.1:18443`. `start` builds only the
+nginx and PostgreSQL support images from the current checkout and pulls the
+immutable public CKAN image. `logs` accepts extra `podman compose logs`
+arguments, for example `bin/local-smoke logs -f ckan`.
