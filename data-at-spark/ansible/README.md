@@ -39,7 +39,9 @@ host-level action. Caddy proxies to nginx over its loopback-only self-signed
 TLS listener and disables upstream certificate verification only for that local
 hop. The runtime service builds only the nginx and PostgreSQL
 support images from its verified checkout; the CKAN service has no build stanza
-and remains digest-pinned.
+and remains digest-pinned. The oneshot systemd unit orchestrates project
+start and stop. Container health checks and restart policies report and handle
+service failures; the systemd unit does not monitor detached containers.
 
 ## Local smoke test
 
@@ -67,9 +69,9 @@ bin/local-smoke stop
 ```
 
 The local CKAN endpoint is `https://127.0.0.1:18443`. `start` builds only the
-nginx and PostgreSQL support images from the current checkout and pulls the
-immutable public CKAN image. `logs` accepts extra `podman compose logs`
-arguments, for example `bin/local-smoke logs -f ckan`.
+nginx and PostgreSQL support images from a clean snapshot of the recorded
+source revision and pulls the immutable public CKAN image. `logs` accepts extra
+`podman compose logs` arguments, for example `bin/local-smoke logs -f ckan`.
 
 After the stack has run for an hour, `bin/hourly-smoke-check` records health
 and resource use, creates a dataset, uploads a small CSV, confirms search, and

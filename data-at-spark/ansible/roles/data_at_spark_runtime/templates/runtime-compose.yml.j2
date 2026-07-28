@@ -18,6 +18,7 @@ services:
         condition: service_healthy
     ports:
       - "127.0.0.1:{{ item.loopback_port }}:443"
+    restart: unless-stopped
 
   ckan:
     platform: linux/amd64

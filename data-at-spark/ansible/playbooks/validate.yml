@@ -91,6 +91,8 @@
               - item.item.ckan_image in item.stdout
               - "'dollar $' in item.stdout"
               - "'dollar $$' not in item.stdout"
+              - "'quote \\\" dollar' in item.stdout"
+              - "'backslash\\\\\\\\value' in item.stdout"
           loop: "{{ data_at_spark_rendered_compose.results }}"
           loop_control:
             label: "{{ item.item.name }}"

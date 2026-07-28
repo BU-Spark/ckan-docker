@@ -159,7 +159,9 @@
   ansible.builtin.getent:
     database: passwd
     key: "{{ data_at_spark_runtime_deploy_user }}"
-  when: data_at_spark_runtime_manage_systemd | bool
+  when:
+    - data_at_spark_runtime_manage_systemd | bool
+    - not (data_at_spark_runtime_validate_only | bool)
 
 - name: Activate rootless systemd units when requested
   ansible.builtin.systemd_service:
@@ -177,4 +179,6 @@
   loop: "{{ data_at_spark_environments }}"
   loop_control:
     label: "{{ item.name }}"
-  when: data_at_spark_runtime_manage_systemd | bool
+  when:
+    - data_at_spark_runtime_manage_systemd | bool
+    - not (data_at_spark_runtime_validate_only | bool)
