@@ -27,8 +27,8 @@
                 ckan_datastore_write_url: integration-write-url
                 ckan_datastore_read_url: integration-read-url
                 beaker_session_secret: integration-beaker-value
-                api_token_jwt_encode_secret: integration-encode-value
-                api_token_jwt_decode_secret: integration-decode-value
+                api_token_jwt_encode_secret: integration-jwt-value
+                api_token_jwt_decode_secret: integration-jwt-value
                 sysadmin_password: integration-admin-value
                 smtp_password: integration-smtp-value
               production:
@@ -39,8 +39,8 @@
                 ckan_datastore_write_url: production-write-url
                 ckan_datastore_read_url: production-read-url
                 beaker_session_secret: production-beaker-value
-                api_token_jwt_encode_secret: production-encode-value
-                api_token_jwt_decode_secret: production-decode-value
+                api_token_jwt_encode_secret: production-jwt-value
+                api_token_jwt_decode_secret: production-jwt-value
                 sysadmin_password: production-admin-value
                 smtp_password: production-smtp-value
             data_at_spark_environments:

@@ -20,13 +20,16 @@
     that:
       - data_at_spark_secrets[item.name] is mapping
       - data_at_spark_runtime_required_secret_keys | difference(data_at_spark_secrets[item.name].keys() | list) | length == 0
+      - data_at_spark_secrets[item.name].api_token_jwt_encode_secret == data_at_spark_secrets[item.name].api_token_jwt_decode_secret
       - >-
         data_at_spark_runtime_validate_only | bool or
         (data_at_spark_runtime_required_secret_keys |
         map('extract', data_at_spark_secrets[item.name]) |
         select('match', '^REQUIRED_EXTERNAL_VALUE$') |
         list | length == 0)
-    fail_msg: "{{ item.name }} needs a complete external secret mapping."
+    fail_msg: >-
+      {{ item.name }} needs a complete external secret mapping. The JWT encode
+      and decode secrets must match for HS256.
   loop: "{{ data_at_spark_environments }}"
   loop_control:
     label: "{{ item.name }}"

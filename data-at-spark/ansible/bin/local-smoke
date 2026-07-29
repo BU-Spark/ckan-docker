@@ -38,13 +38,12 @@ write_variables() {
   umask 077
   mkdir -p -- "${state_root}"
   local postgres_password ckan_db_password datastore_readonly_password
-  local beaker_secret jwt_encode_secret jwt_decode_secret sysadmin_password smtp_password
+  local beaker_secret jwt_secret sysadmin_password smtp_password
   postgres_password=$(hex_secret)
   ckan_db_password=$(hex_secret)
   datastore_readonly_password=$(hex_secret)
   beaker_secret=$(hex_secret)
-  jwt_encode_secret=$(hex_secret)
-  jwt_decode_secret=$(hex_secret)
+  jwt_secret=$(hex_secret)
   sysadmin_password=$(hex_secret)
   smtp_password=$(hex_secret)
   local source_sha
@@ -54,7 +53,7 @@ write_variables() {
     "${source_root}" "${state_root}" "${USER}" "${source_sha}" \
     "${postgres_password}" "${ckan_db_password}" \
     "${datastore_readonly_password}" "${beaker_secret}" \
-    "${jwt_encode_secret}" "${jwt_decode_secret}" \
+    "${jwt_secret}" "${jwt_secret}" \
     "${sysadmin_password}" "${smtp_password}" "${compose_project}" \
     "${runtime_dir}" "${ckan_image}" |
     python3 -c '

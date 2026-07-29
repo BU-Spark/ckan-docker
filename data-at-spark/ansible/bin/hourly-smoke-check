@@ -96,12 +96,37 @@ chmod 600 -- "${curl_config}"
 printf 'header = "Authorization: %s"\n' "${api_token}" >"${curl_config}"
 unset api_token
 
+organization_name="data-at-spark-smoke-${timestamp,,}"
+organization_payload=$(
+  jq -nc \
+    --arg name "${organization_name}" \
+    --arg title "Data@Spark automated smoke ${timestamp}" \
+    '{name: $name, title: $title}'
+)
+organization_response=$(
+  curl --silent --show-error --fail-with-body --insecure \
+    --config "${curl_config}" \
+    --header 'Content-Type: application/json' \
+    --data "${organization_payload}" \
+    "${endpoint}/api/action/organization_create"
+)
+jq -e --arg name "${organization_name}" \
+  '.success == true and .result.name == $name' \
+  <<<"${organization_response}" >/dev/null
+printf 'Created organization: %s\n' "${organization_name}"
+
 dataset_name="data-at-spark-smoke-${timestamp,,}"
 dataset_payload=$(
   jq -nc \
     --arg name "${dataset_name}" \
     --arg title "Data@Spark automated smoke ${timestamp}" \
-    '{name: $name, title: $title, notes: "Disposable local runtime exercise."}'
+    --arg owner_org "${organization_name}" \
+    '{
+      name: $name,
+      title: $title,
+      owner_org: $owner_org,
+      notes: "Disposable local runtime exercise."
+    }'
 )
 dataset_response=$(
   curl --silent --show-error --fail-with-body --insecure \
@@ -160,4 +185,5 @@ printf 'DataStore ingested resource: %s\n' "${resource_id}"
 
 printf 'Data@Spark hourly smoke exercise passed. Report: %s\n' "${report}"
 /home/lwhite/bin/tg-notify \
-  "Data@Spark local smoke passed: stability, dataset creation, CSV upload, search, and DataStore ingestion succeeded. Report: ${report}"
+  "Data@Spark local smoke passed: stability, dataset creation, CSV upload, search, and DataStore ingestion succeeded. Report: ${report}" \
+  || true
