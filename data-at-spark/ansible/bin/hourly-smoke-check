@@ -13,7 +13,18 @@ report="${report_dir}/hourly-smoke-${timestamp}.log"
 curl_config=
 csv_file=
 project=data-at-spark-smoke
-endpoint=https://127.0.0.1:18443
+site_hostname=smoke.data-at-spark.test
+loopback_port=18443
+endpoint="https://${site_hostname}:${loopback_port}"
+curl_options=(
+  --silent
+  --show-error
+  --fail-with-body
+  --insecure
+  --connect-timeout 5
+  --max-time 60
+  --resolve "${site_hostname}:${loopback_port}:127.0.0.1"
+)
 
 mkdir -p -- "${report_dir}"
 chmod 700 -- "${state_root}" "${report_dir}"
@@ -69,8 +80,8 @@ for container in "${healthchecked_containers[@]}"; do
   [[ "${health}" == healthy ]]
 done
 
-status_response=$(curl --silent --show-error --fail-with-body --insecure \
-  --max-time 15 "${endpoint}/api/action/status_show")
+status_response=$(curl "${curl_options[@]}" \
+  "${endpoint}/api/action/status_show")
 jq -e '.success == true and .result.ckan_version == "2.11.5"' \
   <<<"${status_response}" >/dev/null
 printf 'CKAN status: success, version 2.11.5\n'
@@ -104,7 +115,7 @@ organization_payload=$(
     '{name: $name, title: $title}'
 )
 organization_response=$(
-  curl --silent --show-error --fail-with-body --insecure \
+  curl "${curl_options[@]}" \
     --config "${curl_config}" \
     --header 'Content-Type: application/json' \
     --data "${organization_payload}" \
@@ -129,7 +140,7 @@ dataset_payload=$(
     }'
 )
 dataset_response=$(
-  curl --silent --show-error --fail-with-body --insecure \
+  curl "${curl_options[@]}" \
     --config "${curl_config}" \
     --header 'Content-Type: application/json' \
     --data "${dataset_payload}" \
@@ -144,7 +155,7 @@ csv_file=$(mktemp "${state_root}/smoke-data.XXXXXX.csv")
 chmod 600 -- "${csv_file}"
 printf 'place,value\nBoston,1\nCambridge,2\n' >"${csv_file}"
 resource_response=$(
-  curl --silent --show-error --fail-with-body --insecure \
+  curl "${curl_options[@]}" \
     --config "${curl_config}" \
     --form "package_id=${dataset_name}" \
     --form 'name=Smoke CSV' \
@@ -155,7 +166,7 @@ resource_id=$(jq -er '.result.id' <<<"${resource_response}")
 printf 'Uploaded resource: %s\n' "${resource_id}"
 
 search_response=$(
-  curl --silent --show-error --fail-with-body --insecure \
+  curl "${curl_options[@]}" \
     --config "${curl_config}" \
     --get \
     --data-urlencode "q=name:${dataset_name}" \
@@ -169,7 +180,7 @@ printf 'Search found dataset: %s\n' "${dataset_name}"
 datastore_active=false
 for _attempt in $(seq 1 30); do
   resource_response=$(
-    curl --silent --show-error --fail-with-body --insecure \
+    curl "${curl_options[@]}" \
       --config "${curl_config}" \
       --get \
       --data-urlencode "id=${resource_id}" \

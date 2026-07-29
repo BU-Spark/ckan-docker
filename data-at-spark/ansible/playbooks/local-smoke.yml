@@ -58,6 +58,7 @@
           - status
           - --porcelain
           - --untracked-files=all
+          - --ignored=matching
           - --
           - nginx
           - postgresql

@@ -103,8 +103,8 @@ document = {
     "data_at_spark_environments": [{
         "name": "smoke",
         "compose_project_name": compose_project,
-        "site_hostname": "127.0.0.1",
-        "site_url": "https://127.0.0.1:18443",
+        "site_hostname": "smoke.data-at-spark.test",
+        "site_url": "https://smoke.data-at-spark.test:18443",
         "loopback_port": 18443,
         "source_checkout": runtime_dir,
         "ckan_image": ckan_image,
