@@ -11,6 +11,25 @@ The image pins:
   disabled by default — see below)
 - the CKAN 2.11 Solr 9 image
 
+### Updating the `ckanext-spark` pin
+
+Merging a PR to [`ckanext-spark`](https://github.com/BU-Spark/ckanext-spark)
+does not deploy anything by itself — the theme/taxonomy extension is pinned to
+an exact commit, not a branch, so a push there has no effect here until the
+pin is bumped by hand. This is deliberate: a floating reference would let some
+unrelated `ckan-docker` change silently drag in unreviewed theme code.
+
+After merging a change in `ckanext-spark`, update its commit SHA in all three
+places it's pinned, then commit and push that to this repo's `master`:
+
+- `data-at-spark/Dockerfile` — the `CKANEXT_SPARK_COMMIT` build arg default
+- `data-at-spark/compose.yml` — the `DATA_AT_SPARK_EXTENSION_COMMIT` default
+- `data-at-spark/.env.example` — the same variable, for local `docker compose
+  build`
+
+The push to `master` is what actually triggers the build/publish pipeline
+described in "Artifact promotion" below.
+
 ## Configure
 
 Create local environment files from the public examples:
