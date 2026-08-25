@@ -7,18 +7,29 @@ services:
         CKAN_VERSION: ${DATA_AT_SPARK_CKAN_VERSION:-2.11.5}
         CKANEXT_SPARK_COMMIT: ${DATA_AT_SPARK_EXTENSION_COMMIT:-2f9593b6852b520fe99dac693b13a4130036a7df}
         CKANEXT_S3FILESTORE_COMMIT: ${DATA_AT_SPARK_S3FILESTORE_COMMIT:-e972ae3c36489dcfc716f75063ac64c13cde1146}
-    # See ADR/SHARED_HOST_BOOTSTRAP: spark-shared-int is an s-2vcpu-4gb droplet
+    # See SHARED_HOST_BOOTSTRAP: spark-shared-int is an s-2vcpu-4gb droplet
     # running Data@Spark int *and* Herbaria int, plus Caddy, the webhook listener
     # and the OS. Nothing here previously bounded memory, so one service under
     # pressure could starve the whole host -- which is what a hung `podman exec`
     # and 88% sustained CPU on 2 vCPU look like (ckanext-spark#7).
     #
-    # These defaults are sized for the INT host. Production is s-4vcpu-8gb, so it
-    # raises them through its own env file rather than editing this file.
+    # Limits are sized from MEASURED usage on a CKAN 2.11 compose stack, not from
+    # the kubernetes/ manifests -- those limits are ceilings, and the compose
+    # deployment is lighter. Measured RSS, steady under 40 concurrent requests:
     #
-    # Note uWSGI runs `-p 2 --lazy-apps` (base image start_ckan.sh), so CKAN
-    # loads the app twice. Worker count should only be changed after these limits
-    # exist -- raising it on an unbounded host is what makes this worse.
+    #   solr 612 MiB (SOLR_HEAP=256m) | ckan 271 MiB | db 102 MiB | redis 33 MiB
+    #   total ~1.0 GiB, which lines up with the k8s *requests* column (1.44Gi),
+    #   not its limits column.
+    #
+    # CKAN measured 271 MiB under the single-process dev server; production runs
+    # uWSGI `-p 2 --lazy-apps`, which loads the app twice, so 640m allows for
+    # roughly double the measured figure plus headroom. Worker count is left
+    # alone deliberately -- reducing to `-p 1` would cut this further, but that
+    # should follow limits existing rather than precede it.
+    #
+    # These defaults fit the 4 GB int host with room for Herbaria; they are not
+    # an argument for resizing. Production (s-4vcpu-8gb) can raise them via its
+    # own env file.
     mem_limit: ${DATA_AT_SPARK_CKAN_MEM_LIMIT:-640m}
     environment:
       CKAN_SITE_URL: ${DATA_AT_SPARK_SITE_URL}
@@ -28,15 +39,21 @@ services:
 
   solr:
     image: docker.io/ckan/ckan-solr:${DATA_AT_SPARK_SOLR_VERSION:-2.11-solr9}
-    # The JVM heap is already capped -- the image defaults SOLR_HEAP to 512m --
-    # so the heap is not what was unbounded. What was unbounded is total
-    # container RSS: heap plus metaspace, direct buffers, thread stacks and code
-    # cache, which together run well above the heap figure.
+    # Solr is by far the largest service -- 71% of the stack's footprint --
+    # so it's the one worth sizing from measurement rather than guesswork.
     #
-    # 256m is deliberate for int, whose index is a few dozen datasets; the
-    # mem_limit above it is the backstop, sized to leave room for that non-heap
-    # overhead so the JVM garbage-collects rather than getting OOM-killed.
-    mem_limit: ${DATA_AT_SPARK_SOLR_MEM_LIMIT:-640m}
+    # Measured on a CKAN 2.11 stack, RSS steady under 40 concurrent requests:
+    #   SOLR_HEAP unset (image default 512m) -> 1001 MiB
+    #   SOLR_HEAP=256m                       ->  612 MiB
+    #
+    # So RSS runs about 2.4x the heap: the heap was never the unbounded part
+    # (the image already caps it at 512m), it's the non-heap overhead on top --
+    # metaspace, direct buffers, thread stacks, code cache.
+    #
+    # 256m heap suits an int index of a few dozen datasets. 768m leaves ~25%
+    # headroom over the measured 612m; 640m would leave under 30 MiB and get the
+    # JVM OOM-killed on any index growth or GC spike.
+    mem_limit: ${DATA_AT_SPARK_SOLR_MEM_LIMIT:-768m}
     environment:
       SOLR_HEAP: ${DATA_AT_SPARK_SOLR_HEAP:-256m}
 
