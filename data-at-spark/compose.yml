@@ -7,6 +7,19 @@ services:
         CKAN_VERSION: ${DATA_AT_SPARK_CKAN_VERSION:-2.11.5}
         CKANEXT_SPARK_COMMIT: ${DATA_AT_SPARK_EXTENSION_COMMIT:-2f9593b6852b520fe99dac693b13a4130036a7df}
         CKANEXT_S3FILESTORE_COMMIT: ${DATA_AT_SPARK_S3FILESTORE_COMMIT:-e972ae3c36489dcfc716f75063ac64c13cde1146}
+    # See ADR/SHARED_HOST_BOOTSTRAP: spark-shared-int is an s-2vcpu-4gb droplet
+    # running Data@Spark int *and* Herbaria int, plus Caddy, the webhook listener
+    # and the OS. Nothing here previously bounded memory, so one service under
+    # pressure could starve the whole host -- which is what a hung `podman exec`
+    # and 88% sustained CPU on 2 vCPU look like (ckanext-spark#7).
+    #
+    # These defaults are sized for the INT host. Production is s-4vcpu-8gb, so it
+    # raises them through its own env file rather than editing this file.
+    #
+    # Note uWSGI runs `-p 2 --lazy-apps` (base image start_ckan.sh), so CKAN
+    # loads the app twice. Worker count should only be changed after these limits
+    # exist -- raising it on an unbounded host is what makes this worse.
+    mem_limit: ${DATA_AT_SPARK_CKAN_MEM_LIMIT:-640m}
     environment:
       CKAN_SITE_URL: ${DATA_AT_SPARK_SITE_URL}
       CKAN__SITE_TITLE: ${DATA_AT_SPARK_SITE_TITLE:-Data@Spark}
@@ -15,3 +28,23 @@ services:
 
   solr:
     image: docker.io/ckan/ckan-solr:${DATA_AT_SPARK_SOLR_VERSION:-2.11-solr9}
+    # The JVM heap is already capped -- the image defaults SOLR_HEAP to 512m --
+    # so the heap is not what was unbounded. What was unbounded is total
+    # container RSS: heap plus metaspace, direct buffers, thread stacks and code
+    # cache, which together run well above the heap figure.
+    #
+    # 256m is deliberate for int, whose index is a few dozen datasets; the
+    # mem_limit above it is the backstop, sized to leave room for that non-heap
+    # overhead so the JVM garbage-collects rather than getting OOM-killed.
+    mem_limit: ${DATA_AT_SPARK_SOLR_MEM_LIMIT:-640m}
+    environment:
+      SOLR_HEAP: ${DATA_AT_SPARK_SOLR_HEAP:-256m}
+
+  db:
+    mem_limit: ${DATA_AT_SPARK_DB_MEM_LIMIT:-384m}
+
+  redis:
+    mem_limit: ${DATA_AT_SPARK_REDIS_MEM_LIMIT:-96m}
+
+  datapusher:
+    mem_limit: ${DATA_AT_SPARK_DATAPUSHER_MEM_LIMIT:-192m}
