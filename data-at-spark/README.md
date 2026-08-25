@@ -89,14 +89,58 @@ full source Git SHA as a release tag, records its immutable image digest, and
 then advances the `integration` tag to that exact digest. The workflow reuses
 an existing source-SHA tag only after verifying its provenance. If an earlier
 run pushed the image but failed before attestation, a retry rebuilds the
-incomplete publication. Production must deploy the integration-tested digest
-rather than rebuilding or deploying a moving tag.
+incomplete publication.
+
+**Promoting to production is a separate branch, not a separate build.**
+Pushing a `master` commit to `production` (e.g. `git push origin
+master:production`, once you've decided that commit is good) runs a
+`promote-production` job that **retags** `ghcr.io/bu-spark/data-at-spark:production`
+to point at that commit's already-published, already-attested digest -- it
+never rebuilds. If the pushed commit was never actually published from
+`master` (no existing `:<sha>` tag), the job fails loudly rather than building
+something new and unreviewed straight to prod. This mirrors how `:integration`
+already works, just gated behind a second, deliberate push instead of firing
+on every `master` commit.
+
+### Why the workflow POSTs to the webhook itself
+
+Both `promote-integration` and `promote-production` end with a step that
+directly POSTs a signed `registry_package` payload to the host's own
+`webhook_listener` endpoint, rather than waiting for GitHub/GHCR to deliver
+that event on its own. This is deliberate, not a workaround left in by
+accident: confirmed empirically (2026-08-25) that GHCR does not reliably fire
+a `registry_package` webhook for a pure retag (`promote-production` is
+*always* a retag, so without this step its redeploy would never fire at all),
+and even a genuine fresh push isn't guaranteed to fire one either. Self-POSTing
+removes the dependency on GHCR's event behavior entirely. The HMAC secret used
+lives in this repo's GitHub Actions secrets (`DATA_AT_SPARK_INT_WEBHOOK_SECRET`
+/ `DATA_AT_SPARK_PROD_WEBHOOK_SECRET`) and must match whatever
+`webhook_listener_secrets` the target host was provisioned with for that hook
+ID -- see `ansible/roles/data_at_spark_runtime`.
 
 Publish the package publicly so the host can pull it without a registry
 credential. GitHub creates a new container package as private. After the first
 successful publish, an organization package administrator must change its
 visibility. Do not add a personal access token to this repository to automate
 that change.
+
+### If a redeploy reports success but the site is actually down
+
+Confirmed live on both int and prod (2026-08-25): a redeploy that only
+recreates the `ckan` service (not the full stack) can leave the rootless
+Podman port-forwarder in a broken state -- `podman port` reports the mapping
+exists, but nothing is actually listening on the host loopback port, and
+Caddy returns 502. `podman ps`/health checks look fine because `ckan` itself
+comes up healthy; only the `nginx` container's port publish is affected. The
+fix is a full stack reset, not a per-service one:
+
+```bash
+podman compose --project-name <project> --env-file .env -f runtime-compose.yml down
+podman compose --project-name <project> --env-file .env -f runtime-compose.yml up -d
+```
+
+`ss -tlnp | grep <loopback_port>` confirms whether the port is genuinely
+bound before assuming a redeploy actually succeeded.
 
 ## Single-host runtime automation
 
@@ -116,8 +160,10 @@ The check renders integration and production in a temporary directory, runs
 `podman compose config`, verifies the digest, loopback ports, and volume
 contract, then removes its output. The runtime directory also provides
 application-consistent backup and isolated restore-test commands; see the
-Ansible README for their storage boundary. AWS, Cloudflare, R2, registry
-polling, and production promotion remain later automation slices.
+Ansible README for their storage boundary. Registry-tracking redeploy (via
+`deploy_tracking_image` on a `data_at_spark_environments` entry, wired for
+both int and production as of 2026-08-25 -- see "Artifact promotion" above)
+and AWS/Cloudflare/R2 remain the open pieces.
 
 ## Local MinIO filestore spike (issue #9, Phase 1)
 
