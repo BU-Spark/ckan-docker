@@ -213,3 +213,5 @@ web, initialization, and reindex images are replaced.
 For a fresh environment, apply the overlay's `namespace.yaml` first, create the
 external `ckan-secrets` Secret in that namespace, then apply the promoted
 rendered manifest. Do not commit the rendered manifest or Secret values.
+
+<!-- verify self-trigger webhook step, PR #26: 2026-08-26T16:43:54Z -->
