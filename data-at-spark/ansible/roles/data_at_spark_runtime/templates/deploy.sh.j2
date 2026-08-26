@@ -170,7 +170,10 @@ if ! wait_for_health; then
         ROLLBACK_REF="${TRACKING_IMAGE%%:*}@${PREV_DIGEST}"
         log "rolling back to $ROLLBACK_REF"
         if CKAN_IMAGE="$ROLLBACK_REF" compose up -d ckan \
-                2>&1 | sed 's/^/[deploy-{{ item.name }}]   /' && wait_for_health; then
+                2>&1 | sed 's/^/[deploy-{{ item.name }}]   /' \
+            && wait_for_health \
+            && compose up -d --force-recreate nginx 2>&1 | sed 's/^/[deploy-{{ item.name }}]   /' \
+            && wait_for_health; then
             notify_failure "health check failed; rollback to ${PREV_DIGEST:0:19} is healthy"
         else
             notify_failure "health check failed AND rollback failed -- {{ item.name }} is DOWN, needs a human"
@@ -182,6 +185,33 @@ if ! wait_for_health; then
 fi
 
 log "healthy: $HEALTH_URL responding, container state=$(health_state)"
+
+# ---------------------------------------------------------------------------
+# Re-pin nginx's port publish
+# ---------------------------------------------------------------------------
+# ckan's health transition (just confirmed above) makes podman-compose
+# restart nginx automatically to satisfy its `depends_on: condition:
+# service_healthy` -- but that automatic restart happens on podman-compose's
+# own timing, seconds after this script's own health check already passed,
+# and confirmed live (2026-08-24/25/26) to leave rootless Podman's
+# port-forwarder in a state where `podman port` still reports the mapping
+# but nothing is actually listening on the host loopback port. ckan itself
+# stays healthy throughout, so nothing in the check above catches this.
+#
+# Force-recreating nginx here, deliberately, under this script's own
+# control, replaces that unpredictable automatic restart with one whose
+# outcome this script actually verifies before declaring success.
+
+log "recreating nginx to reset its port publish"
+compose up -d --force-recreate nginx 2>&1 | sed 's/^/[deploy-{{ item.name }}]   /'
+
+log "re-verifying $HEALTH_URL after the nginx recreate..."
+if ! wait_for_health; then
+    notify_failure "ckan is healthy but $HEALTH_URL is not reachable after recreating nginx -- port-forwarder likely broken, needs a human ('podman compose down' + 'up -d' clears it)"
+    exit 1
+fi
+
+log "confirmed reachable after nginx recreate: $HEALTH_URL"
 
 # ---------------------------------------------------------------------------
 # Record the deployed digest
