@@ -278,6 +278,26 @@ jobs:
             echo "to \`${DATA_AT_SPARK_IMAGE}@${IMAGE_DIGEST}\`."
           } >> "${GITHUB_STEP_SUMMARY}"
 
+    # GHCR does not fire a registry_package webhook for a pure retag (only for
+    # an actual new push) -- confirmed empirically, not documented. Every
+    # master push also does a real push of the :<sha> tag in the same run, so
+    # that push's event happens to be what has triggered int's redeploy so
+    # far; this job's own retag was never actually the trigger. Self-POSTing
+    # here removes that dependency on GHCR's undocumented event behavior
+    # rather than leaving it working by coincidence.
+    -  name: Trigger the int redeploy directly
+       if: steps.promote.outputs.promoted == 'true'
+       env:
+          WEBHOOK_SECRET: ${{ secrets.DATA_AT_SPARK_INT_WEBHOOK_SECRET }}
+       run: |
+          body='{"action":"published"}'
+          signature="sha256=$(printf '%s' "${body}" | openssl dgst -sha256 -hmac "${WEBHOOK_SECRET}" | sed 's/^.* //')"
+          curl -fsS -X POST "https://hooks.int.buspark.io/hooks/data-at-spark-ghcr-int" \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Event: registry_package" \
+            -H "X-Hub-Signature-256: ${signature}" \
+            --data "${body}"
+
   # Production promotion is a retag, never a rebuild: `production` only ever
   # holds commits that were already pushed to `master` and built/attested
   # there (e.g. `git push origin master:production` for a commit that has
@@ -346,6 +366,7 @@ jobs:
               cut -f1
           )"
           if [ "${production_sha}" != "${WORKFLOW_SHA}" ]; then
+            echo "promoted=false" >> "${GITHUB_OUTPUT}"
             echo "Skipping stale production promotion for ${WORKFLOW_SHA}"
             exit 0
           fi
@@ -353,6 +374,7 @@ jobs:
             --prefer-index=false \
             --tag "${DATA_AT_SPARK_IMAGE}:production" \
             "${DATA_AT_SPARK_IMAGE}@${IMAGE_DIGEST}"
+          echo "promoted=true" >> "${GITHUB_OUTPUT}"
 
     -  name: Verify production tag digest
        env:
@@ -368,3 +390,21 @@ jobs:
             echo "Promoted \`${DATA_AT_SPARK_IMAGE}:production\`"
             echo "to \`${DATA_AT_SPARK_IMAGE}@${IMAGE_DIGEST}\`."
           } >> "${GITHUB_STEP_SUMMARY}"
+
+    # See the matching comment on promote-integration's trigger step: GHCR
+    # does not fire a registry_package webhook for a pure retag, and every
+    # promotion here IS a pure retag (production never gets a fresh push of
+    # its own) -- so without this step, production's redeploy would never
+    # fire at all.
+    -  name: Trigger the production redeploy directly
+       if: steps.promote.outputs.promoted == 'true'
+       env:
+          WEBHOOK_SECRET: ${{ secrets.DATA_AT_SPARK_PROD_WEBHOOK_SECRET }}
+       run: |
+          body='{"action":"published"}'
+          signature="sha256=$(printf '%s' "${body}" | openssl dgst -sha256 -hmac "${WEBHOOK_SECRET}" | sed 's/^.* //')"
+          curl -fsS -X POST "https://hooks.buspark.io/hooks/data-at-spark-ghcr-prod" \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Event: registry_package" \
+            -H "X-Hub-Signature-256: ${signature}" \
+            --data "${body}"
