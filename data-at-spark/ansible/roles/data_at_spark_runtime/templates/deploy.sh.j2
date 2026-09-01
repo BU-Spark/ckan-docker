@@ -81,6 +81,25 @@ if ! flock -n 9; then
     exit 0
 fi
 
+# Kill active pull/Compose pipeline helpers and release their inherited lock
+# when systemd stops this script. KillMode=process deliberately preserves
+# detached conmon processes, so the script owns cleanup of its foreground jobs.
+on_terminate() {
+    local -a child_pids=()
+    trap - ERR INT TERM
+    warn "deployment interrupted; stopping active helper processes"
+    flock -u 9 || true
+    exec 9>&-
+    mapfile -t child_pids < <(jobs -pr)
+    if [ "${#child_pids[@]}" -gt 0 ]; then
+        kill -TERM "${child_pids[@]}" 2>/dev/null || true
+        sleep 2
+        kill -KILL "${child_pids[@]}" 2>/dev/null || true
+    fi
+    exit 143
+}
+trap on_terminate INT TERM
+
 cd "$APP_DIR"
 
 compose() { $COMPOSE_BIN --project-name "$PROJECT_NAME" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"; }
