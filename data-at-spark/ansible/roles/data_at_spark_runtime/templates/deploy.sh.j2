@@ -220,7 +220,7 @@ if ! wait_for_health; then
         log "rolling back to $ROLLBACK_REF"
         if CKAN_IMAGE="$ROLLBACK_REF" run_logged compose up -d ckan \
             && wait_for_health \
-            && run_logged compose up -d --force-recreate nginx \
+            && CKAN_IMAGE="$ROLLBACK_REF" run_logged compose up -d --force-recreate nginx \
             && wait_for_health; then
             notify_failure "health check failed; rollback to ${PREV_DIGEST:0:19} is healthy"
         else
@@ -252,13 +252,22 @@ log "healthy: $HEALTH_URL responding, container state=$HEALTH_STATE"
 # outcome this script actually verifies before declaring success.
 
 log "recreating nginx to reset its port publish"
-run_logged compose up -d --force-recreate nginx
+CKAN_IMAGE="$NEW_REF" run_logged compose up -d --force-recreate nginx
 
 log "re-verifying $HEALTH_URL after the nginx recreate..."
 if ! wait_for_health; then
     notify_failure "ckan is healthy but $HEALTH_URL is not reachable after recreating nginx -- port-forwarder likely broken, needs a human ('podman compose down' + 'up -d' clears it)"
     exit 1
 fi
+
+FINAL_DIGEST=""
+run_capture FINAL_DIGEST podman inspect \
+    --format '{{ '{{' }}.ImageDigest{{ '}}' }}' "$CKAN_CONTAINER" || true
+if [ "$FINAL_DIGEST" != "$NEW_DIGEST" ]; then
+    notify_failure "deployment finished health checks but running digest is ${FINAL_DIGEST:-<none>}, expected $NEW_DIGEST"
+    exit 1
+fi
+log "confirmed running digest: $FINAL_DIGEST"
 
 log "confirmed reachable after nginx recreate: $HEALTH_URL"
 

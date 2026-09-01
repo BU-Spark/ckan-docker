@@ -7,6 +7,9 @@ ConditionPathIsMountPoint={{ data_at_spark_runtime_state_root | dirname }}
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+# Compose starts detached containers, which must outlive this oneshot unit.
+# The default control-group mode kills them when ExecStart exits.
+KillMode=process
 WorkingDirectory={{ item.source_checkout }}
 ExecStartPre=/usr/bin/git -C {{ item.source_checkout }} diff --quiet {{ data_at_spark_runtime_source_sha }} HEAD --
 ExecStartPre=/usr/bin/git -C {{ item.source_checkout }} diff --quiet --
