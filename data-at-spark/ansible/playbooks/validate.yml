@@ -96,6 +96,39 @@
           loop: "{{ data_at_spark_rendered_compose.results }}"
           loop_control:
             label: "{{ item.item.name }}"
+
+        - name: Confirm deploy units preserve detached container processes
+          ansible.builtin.assert:
+            that:
+              - "'KillMode=process' in lookup('ansible.builtin.template', role_path ~ '/templates/data-at-spark-deploy.service.j2')"
+              - >-
+                lookup('ansible.builtin.template', role_path ~ '/templates/data-at-spark-deploy.service.j2')
+                | regex_findall('(?m)^KillMode=\\S+$') | length == 1
+          vars:
+            role_path: "{{ playbook_dir }}/../roles/data_at_spark_runtime"
+            item:
+              name: integration
+              source_checkout: "{{ data_at_spark_validation_root.path }}/integration/source"
+
+        - name: Render the deploy script for syntax validation
+          ansible.builtin.template:
+            src: "{{ playbook_dir }}/../roles/data_at_spark_runtime/templates/deploy.sh.j2"
+            dest: "{{ data_at_spark_validation_root.path }}/deploy.sh"
+            mode: '0700'
+          vars:
+            data_at_spark_runtime_deploy_health_timeout: 180
+            item: >-
+              {{ data_at_spark_environments[0] | combine({
+                'deploy_tracking_image': 'ghcr.io/bu-spark/data-at-spark:integration'
+              }) }}
+
+        - name: Validate the deploy script syntax
+          ansible.builtin.command:
+            argv:
+              - bash
+              - -n
+              - "{{ data_at_spark_validation_root.path }}/deploy.sh"
+          changed_when: false
       always:
         - name: Remove validation output
           ansible.builtin.file:
