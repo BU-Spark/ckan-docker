@@ -91,7 +91,7 @@ on_terminate() {
     flock -u 9 || true
     exec 9>&-
     mapfile -t child_pids < <(jobs -pr)
-    if [ "${#child_pids[@]}" -gt 0 ]; then
+    if [ -n "${child_pids[*]:-}" ]; then
         kill -TERM "${child_pids[@]}" 2>/dev/null || true
         sleep 2
         kill -KILL "${child_pids[@]}" 2>/dev/null || true
@@ -103,6 +103,15 @@ trap on_terminate INT TERM
 cd "$APP_DIR"
 
 compose() { $COMPOSE_BIN --project-name "$PROJECT_NAME" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"; }
+
+# Bash runs traps while `wait` is interrupted, but defers them while a
+# synchronous foreground pipeline is active. Run logged helpers as background
+# pipelines and wait for them so the termination trap can enforce the timeout.
+run_logged() {
+    "$@" 2>&1 | sed 's/^/[deploy-{{ item.name }}]   /' &
+    local job_pid=$!
+    wait "$job_pid"
+}
 
 log "requested by: ${CD_REPO:-manual}"
 log "tracking floating tag: $TRACKING_IMAGE"
@@ -125,7 +134,7 @@ log "currently running digest: ${PREV_DIGEST:-<none>}"
 # proves who sent it, not that its contents are safe -- so the image always
 # comes from the pinned tracking tag in this file, never from the payload.
 
-if ! podman pull "$TRACKING_IMAGE" 2>&1 | sed 's/^/[deploy-{{ item.name }}]   /'; then
+if ! run_logged podman pull "$TRACKING_IMAGE"; then
     notify_failure "could not pull $TRACKING_IMAGE; leaving the running stack untouched"
     exit 1
 fi
@@ -153,7 +162,7 @@ NEW_REF="${TRACKING_IMAGE%%:*}@${NEW_DIGEST}"
 # the next deliberate apply, exactly like Herbaria's SYMBIOTA_IMAGE override.
 
 log "recreating ckan service at $NEW_REF"
-CKAN_IMAGE="$NEW_REF" compose up -d ckan 2>&1 | sed 's/^/[deploy-{{ item.name }}]   /'
+CKAN_IMAGE="$NEW_REF" run_logged compose up -d ckan
 
 # ---------------------------------------------------------------------------
 # Health check
@@ -183,15 +192,14 @@ wait_for_health() {
 log "waiting up to ${HEALTH_TIMEOUT}s for $CKAN_CONTAINER to become healthy..."
 if ! wait_for_health; then
     log "HEALTH CHECK FAILED (state=$(health_state), url=$HEALTH_URL)"
-    podman logs --tail 40 "$CKAN_CONTAINER" 2>&1 | sed 's/^/[deploy-{{ item.name }}]   /' || true
+    run_logged podman logs --tail 40 "$CKAN_CONTAINER" || true
 
     if [ -n "$PREV_DIGEST" ]; then
         ROLLBACK_REF="${TRACKING_IMAGE%%:*}@${PREV_DIGEST}"
         log "rolling back to $ROLLBACK_REF"
-        if CKAN_IMAGE="$ROLLBACK_REF" compose up -d ckan \
-                2>&1 | sed 's/^/[deploy-{{ item.name }}]   /' \
+        if CKAN_IMAGE="$ROLLBACK_REF" run_logged compose up -d ckan \
             && wait_for_health \
-            && compose up -d --force-recreate nginx 2>&1 | sed 's/^/[deploy-{{ item.name }}]   /' \
+            && run_logged compose up -d --force-recreate nginx \
             && wait_for_health; then
             notify_failure "health check failed; rollback to ${PREV_DIGEST:0:19} is healthy"
         else
@@ -222,7 +230,7 @@ log "healthy: $HEALTH_URL responding, container state=$(health_state)"
 # outcome this script actually verifies before declaring success.
 
 log "recreating nginx to reset its port publish"
-compose up -d --force-recreate nginx 2>&1 | sed 's/^/[deploy-{{ item.name }}]   /'
+run_logged compose up -d --force-recreate nginx
 
 log "re-verifying $HEALTH_URL after the nginx recreate..."
 if ! wait_for_health; then
