@@ -96,6 +96,16 @@
           loop: "{{ data_at_spark_rendered_compose.results }}"
           loop_control:
             label: "{{ item.item.name }}"
+
+        - name: Confirm deploy units preserve detached container processes
+          ansible.builtin.assert:
+            that:
+              - "'KillMode=process' in lookup('ansible.builtin.template', role_path ~ '/templates/data-at-spark-deploy.service.j2')"
+          vars:
+            role_path: "{{ playbook_dir }}/../roles/data_at_spark_runtime"
+            item:
+              name: integration
+              source_checkout: "{{ data_at_spark_validation_root.path }}/integration/source"
       always:
         - name: Remove validation output
           ansible.builtin.file:

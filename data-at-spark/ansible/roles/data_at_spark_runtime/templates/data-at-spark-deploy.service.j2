@@ -13,6 +13,12 @@ Environment=CD_REPO=webhook
 
 ExecStart=/usr/local/bin/data-at-spark-{{ item.name }}-deploy.sh
 
+# podman-compose can leave conmon/container processes in this oneshot's
+# cgroup.  The default KillMode=control-group terminates those processes as
+# soon as the deploy script exits, after its final health check has passed.
+# Limit cleanup to the script itself; Podman owns the detached containers.
+KillMode=process
+
 # A failed deploy must not mask the next one. The script rolls back on a
 # failed health check, so a retry starts from a known-good container.
 Restart=no
