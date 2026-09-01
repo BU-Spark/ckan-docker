@@ -101,6 +101,9 @@
           ansible.builtin.assert:
             that:
               - "'KillMode=process' in lookup('ansible.builtin.template', role_path ~ '/templates/data-at-spark-deploy.service.j2')"
+              - >-
+                lookup('ansible.builtin.template', role_path ~ '/templates/data-at-spark-deploy.service.j2')
+                | regex_findall('(?m)^KillMode=\\S+$') | length == 1
           vars:
             role_path: "{{ playbook_dir }}/../roles/data_at_spark_runtime"
             item:
