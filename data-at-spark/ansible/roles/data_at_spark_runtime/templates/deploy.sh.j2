@@ -108,9 +108,26 @@ compose() { $COMPOSE_BIN --project-name "$PROJECT_NAME" --env-file "$ENV_FILE" -
 # synchronous foreground pipeline is active. Run logged helpers as background
 # pipelines and wait for them so the termination trap can enforce the timeout.
 run_logged() {
-    "$@" 2>&1 | sed 's/^/[deploy-{{ item.name }}]   /' &
+    ("$@" 2>&1 | sed 's/^/[deploy-{{ item.name }}]   /') 9>&- &
     local job_pid=$!
     wait "$job_pid"
+}
+
+run_capture() {
+    local output_var="$1" output_file job_pid status output
+    shift
+    output_file="$(mktemp /tmp/data-at-spark-deploy-output.XXXXXX 9>&-)"
+    "$@" >"$output_file" 2>/dev/null 9>&- &
+    job_pid=$!
+    if wait "$job_pid"; then
+        status=0
+    else
+        status=$?
+    fi
+    output="$(<"$output_file")"
+    rm -f "$output_file" 9>&-
+    printf -v "$output_var" '%s' "$output"
+    return "$status"
 }
 
 log "requested by: ${CD_REPO:-manual}"
@@ -120,11 +137,9 @@ log "tracking floating tag: $TRACKING_IMAGE"
 # Record what is running now, so we can detect a no-op and roll back
 # ---------------------------------------------------------------------------
 
-running_digest() {
-    podman inspect --format '{{ '{{' }}.ImageDigest{{ '}}' }}' "$CKAN_CONTAINER" 2>/dev/null || true
-}
-
-PREV_DIGEST="$(running_digest)"
+PREV_DIGEST=""
+run_capture PREV_DIGEST podman inspect \
+    --format '{{ '{{' }}.ImageDigest{{ '}}' }}' "$CKAN_CONTAINER" || true
 log "currently running digest: ${PREV_DIGEST:-<none>}"
 
 # ---------------------------------------------------------------------------
@@ -139,7 +154,9 @@ if ! run_logged podman pull "$TRACKING_IMAGE"; then
     exit 1
 fi
 
-NEW_DIGEST="$(podman image inspect --format '{{ '{{' }}.Digest{{ '}}' }}' "$TRACKING_IMAGE" 2>/dev/null || true)"
+NEW_DIGEST=""
+run_capture NEW_DIGEST podman image inspect \
+    --format '{{ '{{' }}.Digest{{ '}}' }}' "$TRACKING_IMAGE" || true
 log "registry digest for $TRACKING_IMAGE: ${NEW_DIGEST:-<unknown>}"
 
 if [ -z "$NEW_DIGEST" ]; then
@@ -168,30 +185,34 @@ CKAN_IMAGE="$NEW_REF" run_logged compose up -d ckan
 # Health check
 # ---------------------------------------------------------------------------
 
-health_state() {
-    podman inspect --format '{{ '{{' }}.State.Health.Status{{ '}}' }}' "$CKAN_CONTAINER" 2>/dev/null || echo unknown
+get_health_state() {
+    HEALTH_STATE=unknown
+    run_capture HEALTH_STATE podman inspect \
+        --format '{{ '{{' }}.State.Health.Status{{ '}}' }}' "$CKAN_CONTAINER" || true
 }
 
 wait_for_health() {
-    local deadline state
+    local deadline
     deadline=$(( SECONDS + HEALTH_TIMEOUT ))
     while [ $SECONDS -lt $deadline ]; do
-        state="$(health_state)"
-        if [ "$state" = "healthy" ] && curl -fsSk -m 10 -o /dev/null "$HEALTH_URL"; then
+        get_health_state
+        if [ "$HEALTH_STATE" = "healthy" ] \
+                && curl -fsSk -m 10 -o /dev/null "$HEALTH_URL" 9>&-; then
             return 0
         fi
-        if [ "$state" = "unhealthy" ]; then
+        if [ "$HEALTH_STATE" = "unhealthy" ]; then
             log "container reports unhealthy"
             return 1
         fi
-        sleep 5
+        sleep 5 9>&-
     done
     return 1
 }
 
 log "waiting up to ${HEALTH_TIMEOUT}s for $CKAN_CONTAINER to become healthy..."
 if ! wait_for_health; then
-    log "HEALTH CHECK FAILED (state=$(health_state), url=$HEALTH_URL)"
+    get_health_state
+    log "HEALTH CHECK FAILED (state=$HEALTH_STATE, url=$HEALTH_URL)"
     run_logged podman logs --tail 40 "$CKAN_CONTAINER" || true
 
     if [ -n "$PREV_DIGEST" ]; then
@@ -211,7 +232,8 @@ if ! wait_for_health; then
     exit 1
 fi
 
-log "healthy: $HEALTH_URL responding, container state=$(health_state)"
+get_health_state
+log "healthy: $HEALTH_URL responding, container state=$HEALTH_STATE"
 
 # ---------------------------------------------------------------------------
 # Re-pin nginx's port publish
