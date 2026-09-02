@@ -101,7 +101,11 @@ trap on_terminate INT TERM
 
 cd "$APP_DIR"
 
-compose() { $COMPOSE_BIN --project-name "$PROJECT_NAME" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"; }
+# Podman can leave detached conmon/rootlessport processes behind after compose
+# returns. Close the deploy lock in the compose child itself so those processes
+# cannot retain FD 9 and turn every later webhook request into a false
+# "deployment in progress" no-op.
+compose() { (exec 9>&-; $COMPOSE_BIN --project-name "$PROJECT_NAME" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"); }
 
 # Bash runs traps while `wait` is interrupted, but defers them while a
 # synchronous foreground pipeline is active. Run logged helpers as background

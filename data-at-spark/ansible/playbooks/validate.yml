@@ -129,6 +129,16 @@
               - -n
               - "{{ data_at_spark_validation_root.path }}/deploy.sh"
           changed_when: false
+
+        - name: Confirm Compose cannot inherit the deployment lock
+          ansible.builtin.assert:
+            that:
+              - >-
+                lookup('ansible.builtin.file', data_at_spark_validation_root.path ~ '/deploy.sh')
+                is search('compose\(\) \{ \(exec 9>&-;')
+            fail_msg: >-
+              The deploy script must close lock FD 9 inside compose() so
+              detached Podman processes cannot retain the deployment lock.
       always:
         - name: Remove validation output
           ansible.builtin.file:
