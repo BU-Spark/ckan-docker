@@ -207,6 +207,7 @@
   loop: "{{ data_at_spark_environments }}"
   loop_control:
     label: "{{ item.name }}"
+  no_log: true
 
 - name: Create the rootless systemd unit directory
   ansible.builtin.file:
