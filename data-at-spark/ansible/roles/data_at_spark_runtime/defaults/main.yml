@@ -23,10 +23,9 @@ data_at_spark_runtime_manage_systemd: false
 # file -> data-at-spark-<env>-deploy.path -> deploy.sh.j2, pulling
 # item.deploy_tracking_image, health-gating, and rolling back on failure).
 # Per-environment: an item in data_at_spark_environments enables this by
-# setting its own deploy_tracking_image (a floating tag, e.g.
-# "ghcr.io/bu-spark/data-at-spark:integration"); an item that omits the key
-# never gets these units. production intentionally has no floating tag to
-# track, matching Herbaria's alpha -- promotion there stays manual.
+# setting its own deploy_tracking_image (a floating tag such as :integration
+# or :production). An item that omits the key never gets these units. Promotion
+# policy belongs to the publishing workflow; this role deploys a changed tag.
 data_at_spark_runtime_deploy_health_timeout: 180
 
 data_at_spark_runtime_required_secret_keys:

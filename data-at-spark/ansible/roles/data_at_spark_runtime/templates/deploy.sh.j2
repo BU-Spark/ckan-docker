@@ -47,10 +47,9 @@ warn() { echo "[deploy-{{ item.name }}] WARNING: $*" >&2; }
 # ---------------------------------------------------------------------------
 # Failure notification
 # ---------------------------------------------------------------------------
-# Set SLACK_WEBHOOK_URL in .env.secrets (untracked, outside this checkout's
-# Ansible-managed files) to get failure alerts. No URL configured => log
-# loudly and carry on; a missing notifier must not be the thing that fails a
-# deploy.
+# Set SLACK_WEBHOOK_URL through a systemd service drop-in to get failure
+# alerts. No URL configured means log loudly and carry on; a missing notifier
+# must not be the thing that fails a deploy.
 
 notify_failure() {
     local msg="$1"
