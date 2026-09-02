@@ -195,7 +195,9 @@
   loop: "{{ data_at_spark_runtime_checkout_revisions.results | default([]) }}"
   loop_control:
     label: "{{ item.item.name }}"
-  when: not (data_at_spark_runtime_validate_only | bool)
+  when:
+    - not (data_at_spark_runtime_validate_only | bool)
+    - not ansible_check_mode
 
 - name: Render rootless Podman environment files
   ansible.builtin.template:
