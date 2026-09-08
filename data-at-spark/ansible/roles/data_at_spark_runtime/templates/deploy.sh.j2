@@ -275,6 +275,29 @@ log "confirmed running digest: $FINAL_DIGEST"
 log "confirmed reachable after nginx recreate: $HEALTH_URL"
 
 # ---------------------------------------------------------------------------
+# Reconcile the topic taxonomy
+# ---------------------------------------------------------------------------
+# The Data@Spark topics are CKAN groups, but ckanext-spark renders the full
+# taxonomy from its own table rather than from the database -- so every tile
+# appears whether or not the matching group exists. A database without them
+# renders the complete grid, each tile reading "0 datasets" and every one
+# 404ing on click, and nothing logs a thing. Verified 2026-08-28: group_list
+# was empty on both int and prod while the grid rendered fine.
+#
+# `spark init-topics` creates what is missing and repairs a drifted title or
+# state, so it is safe to run on every deploy.
+#
+# Deliberately non-fatal. The stack is healthy and digest-verified by this
+# point; a missing group is a broken link, not an outage, and rolling a
+# healthy site back over one would be the larger harm.
+
+log "reconciling the topic taxonomy"
+if ! run_logged podman exec "$CKAN_CONTAINER" \
+        sh -c 'ckan -c "$CKAN_INI" spark init-topics'; then
+    warn "spark init-topics failed; topic tiles may link to missing groups"
+fi
+
+# ---------------------------------------------------------------------------
 # Record the deployed digest
 # ---------------------------------------------------------------------------
 
