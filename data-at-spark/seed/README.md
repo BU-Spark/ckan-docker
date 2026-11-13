@@ -29,3 +29,13 @@ by ckanext-spark); the seed only attaches datasets to them.
   enforces this.
 
 To add an entry, append to `catalog.yaml` and run the self-check.
+
+## Safety rules
+
+- The seeder refuses to touch an existing dataset that lacks its `kind` extra,
+  so it never overwrites a dataset someone created by hand.
+- When an entry changes, `package_patch` replaces the dataset's whole resource
+  list. CKAN gives those resources new IDs, and any DataStore table loaded
+  from the old ones is dropped. That is harmless for today's link-only
+  entries. Revisit it before hosted entries get real OSN files with
+  DataStore previews.
