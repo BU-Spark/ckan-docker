@@ -212,7 +212,7 @@ datasets:
   resources:
     - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/property-assessment", format: HTML}
 
-- name: building-and-property-violations1
+- name: building-and-property-violations
   title: Building and property violations
   notes: "Building and property violation records. Hosted on Analyze Boston; this entry links to the dataset page. See source for fields, license and updates."
   organization: analyze-boston-external
@@ -236,9 +236,9 @@ datasets:
   resources:
     - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/live-street-address-management-sam-addresses", format: HTML}
 
-- name: 2020-census-for-boston
-  title: 2020 Census for Boston
-  notes: "2020 Census data for Boston. Hosted on Analyze Boston; this entry links to the dataset page. See source for fields, license and updates."
+- name: census-tracts-boston-2020
+  title: Census Tracts Boston (2020)
+  notes: "2020 Census tract boundaries for Boston, the geography most Spark census analyses join on. Hosted on Analyze Boston; this entry links to the dataset page. See source for fields, license and updates."
   organization: analyze-boston-external
   topics: [government-politics-public-policy, immigration-community-social-services]
   tags: [boston, analyze-boston, pointer]
@@ -246,7 +246,7 @@ datasets:
   license: see source
   kind: pointer
   resources:
-    - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/2020-census-for-boston", format: HTML}
+    - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/census-tracts-boston-2020", format: HTML}
 
 - name: crime-incident-reports-august-2015-to-date-source-new-system
   title: Crime incident reports (August 2015 to date)
