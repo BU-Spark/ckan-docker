@@ -1,0 +1,29 @@
+# OSN overlay: points ckanext-s3filestore at the Open Storage Network
+# PRIVATE bucket (issue #9, Phase 2 adapted to OSN; see README.md).
+# Layers on the base stack and data-at-spark/compose.yml exactly like
+# minio-spike/compose.yml, minus the local MinIO services.
+#
+# Every OSN value is required from the environment (data-at-spark/osn/.env,
+# gitignored). Nothing here has a default for an endpoint, bucket or key, so a
+# missing value fails at `compose config` instead of silently using MinIO.
+# The PUBLIC bucket is deliberately absent: CKAN never holds a key for it.
+
+services:
+
+  ckan:
+    environment:
+      CKAN_SITE_URL: ${DATA_AT_SPARK_SITE_URL:-https://localhost:8443}
+      CKAN__PLUGINS: ${DATA_AT_SPARK_CKAN_PLUGINS_WITH_S3FILESTORE:?set DATA_AT_SPARK_CKAN_PLUGINS_WITH_S3FILESTORE}
+      CKANEXT__S3FILESTORE__AWS_ACCESS_KEY_ID: ${OSN_PRIVATE_RW_ACCESS_KEY_ID:?set OSN_PRIVATE_RW_ACCESS_KEY_ID}
+      CKANEXT__S3FILESTORE__AWS_SECRET_ACCESS_KEY: ${OSN_PRIVATE_RW_SECRET_ACCESS_KEY:?set OSN_PRIVATE_RW_SECRET_ACCESS_KEY}
+      CKANEXT__S3FILESTORE__AWS_BUCKET_NAME: ${OSN_PRIVATE_BUCKET:?set OSN_PRIVATE_BUCKET}
+      CKANEXT__S3FILESTORE__REGION_NAME: ${OSN_REGION:?set OSN_REGION}
+      CKANEXT__S3FILESTORE__HOST_NAME: ${OSN_ENDPOINT_URL:?set OSN_ENDPOINT_URL}
+      CKANEXT__S3FILESTORE__SIGNATURE_VERSION: s3v4
+      CKANEXT__S3FILESTORE__ADDRESSING_STYLE: path
+      # s3filestore defaults acl to public-read; private is mandatory here.
+      CKANEXT__S3FILESTORE__ACL: private
+      CKANEXT__S3FILESTORE__SIGNED_URL_EXPIRY: ${S3FILESTORE_SIGNED_URL_EXPIRY:-60}
+    volumes:
+      # Reuse the spike's harness unchanged; it reads the CKANEXT__S3FILESTORE__* vars above.
+      - ./data-at-spark/minio-spike/direct_upload.py:/opt/data-at-spark/direct_upload.py:ro,Z

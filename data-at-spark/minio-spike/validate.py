@@ -64,7 +64,11 @@ def check_compose_arg_default() -> None:
 def check_no_committed_secrets() -> None:
     # No committed .env files (only .env.example) anywhere ckanext-s3filestore
     # config is introduced, and no Kubernetes Secret manifests in this phase.
-    for env_path in ("data-at-spark/.env", "data-at-spark/minio-spike/.env"):
+    for env_path in (
+        "data-at-spark/.env",
+        "data-at-spark/minio-spike/.env",
+        "data-at-spark/osn/.env",
+    ):
         result = subprocess.run(
             ["git", "ls-files", "--error-unmatch", env_path],
             cwd=REPO_ROOT,
@@ -77,7 +81,7 @@ def check_no_committed_secrets() -> None:
                 "only .env.example files may be committed"
             )
 
-    for path in [SPIKE_DIR / "compose.yml"]:
+    for path in [SPIKE_DIR / "compose.yml", DATA_AT_SPARK_DIR / "osn" / "compose.yml"]:
         text = path.read_text(errors="ignore")
         if "kind: Secret" in text:
             fail(f"{path.relative_to(REPO_ROOT)} commits a Kubernetes Secret manifest")
