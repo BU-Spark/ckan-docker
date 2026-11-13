@@ -1,0 +1,359 @@
+# Data@Spark seed catalog. Consumed by seed.py. Topic names are CKAN group
+# names from ckanext-spark topics.py. Edit here, re-run seed.py (idempotent).
+organizations:
+  - {name: bu-spark, title: BU Spark!, description: "Datasets produced or collected by BU Spark! projects."}
+  - {name: analyze-boston-external, title: "Analyze Boston (external)", description: "Pointers to datasets published on Analyze Boston (data.boston.gov). Link only; nothing is mirrored here."}
+  - {name: external-sources, title: External sources, description: "Pointers to public datasets published by other organizations. Link only."}
+
+datasets:
+# ---------------- HOSTED (bu-spark) ----------------
+- name: hampden-deeds-transcriptions
+  title: Hampden County Registry of Deeds transcriptions
+  notes: "Transcriptions of 272 land deeds (standardized_land_deeds.csv) from the Hampden County Registry of Deeds, from the dd4g-deeds-transcription project. Dataset documentation (DATASETDOC) is blank in the source repo; metadata pending."
+  organization: bu-spark
+  topics: [arts-culture-humanities]
+  tags: [deeds, transcription, land-records, hampden-county, storage-pending]
+  source: "BU-Spark/dd4g-deeds-transcription"
+  license: see source
+  kind: hosted
+  storage: pending-osn
+  resources:
+    - {name: Source files (GitHub), url: "https://github.com/BU-Spark/dd4g-deeds-transcription/tree/HEAD/dataset", format: HTML}
+
+- name: ma-legislature-bills
+  title: Massachusetts Legislature bills
+  notes: "Bill data used by the ml-maple-bill-summarization demo app, obtained from the malegislature.gov API (open access). See source for fields and coverage."
+  organization: bu-spark
+  topics: [government-politics-public-policy]
+  tags: [legislature, bills, massachusetts, storage-pending]
+  source: "BU-Spark/ml-maple-bill-summarization (malegislature.gov API)"
+  license: open access per source; see source
+  kind: hosted
+  storage: pending-osn
+  resources:
+    - {name: Source files (GitHub), url: "https://github.com/BU-Spark/ml-maple-bill-summarization", format: HTML}
+
+- name: military-base-gambling-revenue
+  title: Military-base gambling revenue (MuckRock FOIA)
+  notes: "Military-base gambling revenue records obtained through MuckRock FOIA requests, from the fa25-team-b work in ds-muckrock-liberation. See source."
+  organization: bu-spark
+  topics: [government-politics-public-policy]
+  tags: [foia, muckrock, military, gambling, storage-pending]
+  source: "BU-Spark/ds-muckrock-liberation (fa25-team-b)"
+  license: see source
+  kind: hosted
+  storage: pending-osn
+  resources:
+    - {name: Source files (GitHub), url: "https://github.com/BU-Spark/ds-muckrock-liberation/tree/HEAD/fa25-team-b", format: HTML}
+
+- name: ghana-nighttime-lights-elections
+  title: Ghana nighttime lights and elections panel
+  notes: "Panel dataset (1,521 rows) linking Ghana nighttime-lights measurements with election outcomes, from the ds-ciss-dem-in-dark project. See source."
+  organization: bu-spark
+  topics: [government-politics-public-policy]
+  tags: [ghana, nighttime-lights, elections, panel-data, storage-pending]
+  source: "BU-Spark/ds-ciss-dem-in-dark"
+  license: see source
+  kind: hosted
+  storage: pending-osn
+  resources:
+    - {name: Source files (GitHub), url: "https://github.com/BU-Spark/ds-ciss-dem-in-dark", format: HTML}
+
+- name: cambridge-open-data-metadata-audit
+  title: Cambridge open-data metadata audit
+  notes: "Audit of metadata quality for Cambridge open-data datasets (282 rows), from the dd4g-cambridge-meta-health project. See source."
+  organization: bu-spark
+  topics: [media-technology-communication]
+  tags: [metadata, open-data, cambridge, audit, storage-pending]
+  source: "BU-Spark/dd4g-cambridge-meta-health"
+  license: see source
+  kind: hosted
+  storage: pending-osn
+  resources:
+    - {name: Source files (GitHub), url: "https://github.com/BU-Spark/dd4g-cambridge-meta-health", format: HTML}
+
+- name: bu-faculty-sustainability-publications
+  title: BU faculty sustainability publications
+  notes: "About 16,000 rows of BU faculty publications relevant to sustainability, from the ds-bu-sustainability-stars project. See source."
+  organization: bu-spark
+  topics: [environment-sustainability, education-learning]
+  tags: [sustainability, publications, bu, stars, storage-pending]
+  source: "BU-Spark/ds-bu-sustainability-stars"
+  license: see source
+  kind: hosted
+  storage: pending-osn
+  resources:
+    - {name: Source files (GitHub), url: "https://github.com/BU-Spark/ds-bu-sustainability-stars", format: HTML}
+
+- name: boston-district-7-indicators
+  title: Boston District 7 indicators
+  notes: "Neighborhood indicator data for Boston City Council District 7, from the ds-boston-d7-indicators project. Owner names and the client catchment boundary are omitted from this listing. See source."
+  organization: bu-spark
+  topics: [housing-urban-development]
+  tags: [boston, district-7, indicators, neighborhoods, storage-pending]
+  source: "BU-Spark/ds-boston-d7-indicators"
+  license: see source
+  kind: hosted
+  storage: pending-osn
+  resources:
+    - {name: Source files (GitHub), url: "https://github.com/BU-Spark/ds-boston-d7-indicators", format: HTML}
+
+- name: bpd-court-overtime-2012-2022
+  title: BPD court overtime 2012-2022
+  notes: "Boston Police Department court overtime, 2012-2022, from the ds-police-overtime project. See source."
+  organization: bu-spark
+  topics: [criminal-justice-public-safety]
+  tags: [police, overtime, boston, bpd, storage-pending]
+  source: "BU-Spark/ds-police-overtime"
+  license: see source
+  kind: hosted
+  storage: pending-osn
+  resources:
+    - {name: Source files (GitHub), url: "https://github.com/BU-Spark/ds-police-overtime", format: HTML}
+
+- name: bpd-roster-race-sex-2020-2024
+  title: BPD roster with race and sex, 2020-2024
+  notes: "Boston Police Department roster with race and sex, 2020-2024, obtained through a public records request. Source: Spark BPI dataset sheet. No repository path; files and metadata pending."
+  organization: bu-spark
+  topics: [criminal-justice-public-safety]
+  tags: [police, roster, boston, bpd, public-records, storage-pending]
+  source: "Spark BPI public-records collection"
+  license: see source
+  kind: hosted
+  storage: pending-osn
+  resources: []
+
+- name: bpd-paid-detail-records
+  title: BPD paid detail records
+  notes: "Boston Police Department paid detail records, obtained through public records requests. No repository path; files and metadata pending."
+  organization: bu-spark
+  topics: [criminal-justice-public-safety]
+  tags: [police, paid-details, boston, bpd, public-records, storage-pending]
+  source: "Spark BPI public-records collection"
+  license: see source
+  kind: hosted
+  storage: pending-osn
+  resources: []
+
+- name: boston-parking-massdot-traffic-tickets
+  title: Boston parking and MassDOT traffic tickets
+  notes: "Boston parking tickets and MassDOT traffic tickets, obtained through public records requests. No repository path; files and metadata pending."
+  organization: bu-spark
+  topics: [criminal-justice-public-safety]
+  tags: [tickets, parking, traffic, boston, massdot, public-records, storage-pending]
+  source: "Spark BPI public-records collection"
+  license: see source
+  kind: hosted
+  storage: pending-osn
+  resources: []
+
+- name: police-political-contributions-ma-ocpf
+  title: Police political contributions (MA OCPF)
+  notes: "Political contributions by police, drawn from Massachusetts OCPF (Office of Campaign and Political Finance) records, from the mijente_police_in_mass project. See source."
+  organization: bu-spark
+  topics: [government-politics-public-policy, criminal-justice-public-safety]
+  tags: [police, campaign-finance, ocpf, massachusetts, storage-pending]
+  source: "BU-Spark/CS506-Fall2020-Projects/mijente_police_in_mass"
+  license: see source
+  kind: hosted
+  storage: pending-osn
+  resources:
+    - {name: Source files (GitHub), url: "https://github.com/BU-Spark/CS506-Fall2020-Projects/tree/HEAD/mijente_police_in_mass", format: HTML}
+
+- name: bpda-brazilian-community-census-analysis
+  title: BPDA Brazilian community census analysis
+  notes: "Analysis of census data on Boston's Brazilian community, from the ds-boston-bpda-br-census project. See source."
+  organization: bu-spark
+  topics: [immigration-community-social-services]
+  tags: [census, brazilian, boston, bpda, storage-pending]
+  source: "BU-Spark/ds-boston-bpda-br-census"
+  license: see source
+  kind: hosted
+  storage: pending-osn
+  resources:
+    - {name: Source files (GitHub), url: "https://github.com/BU-Spark/ds-boston-bpda-br-census", format: HTML}
+
+- name: covid-racial-data-tracker
+  title: COVID racial data tracker
+  notes: "COVID-19 racial data tracker built with CARR, from the CARR-x-Spark-COVID-Racial-Data-Tracker project. See source."
+  organization: bu-spark
+  topics: [health-medicine-wellbeing]
+  tags: [covid-19, race, health, tracker, storage-pending]
+  source: "BU-Spark/CARR-x-Spark-COVID-Racial-Data-Tracker"
+  license: see source
+  kind: hosted
+  storage: pending-osn
+  resources:
+    - {name: Source files (GitHub), url: "https://github.com/BU-Spark/CARR-x-Spark-COVID-Racial-Data-Tracker", format: HTML}
+
+# ---------------- POINTERS (analyze-boston-external) ----------------
+# Resource = dataset PAGE, format HTML, never a CSV (keeps DataPusher out).
+- name: 311-service-requests
+  title: 311 service requests
+  notes: "Boston 311 service requests. Hosted on Analyze Boston; this entry links to the dataset page. See source for fields, license and updates."
+  organization: analyze-boston-external
+  topics: [government-politics-public-policy, housing-urban-development]
+  tags: [boston, analyze-boston, pointer]
+  source: Analyze Boston (data.boston.gov)
+  license: see source
+  kind: pointer
+  resources:
+    - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/311-service-requests", format: HTML}
+
+- name: property-assessment
+  title: Property assessment
+  notes: "Boston property assessment records. Hosted on Analyze Boston; this entry links to the dataset page. See source for fields, license and updates."
+  organization: analyze-boston-external
+  topics: [housing-urban-development]
+  tags: [boston, analyze-boston, pointer]
+  source: Analyze Boston (data.boston.gov)
+  license: see source
+  kind: pointer
+  resources:
+    - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/property-assessment", format: HTML}
+
+- name: building-and-property-violations
+  title: Building and property violations
+  notes: "Building and property violation records. Hosted on Analyze Boston; this entry links to the dataset page. See source for fields, license and updates."
+  organization: analyze-boston-external
+  topics: [housing-urban-development, law-civil-rights]
+  tags: [boston, analyze-boston, pointer]
+  source: Analyze Boston (data.boston.gov)
+  license: see source
+  kind: pointer
+  resources:
+    - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/building-and-property-violations1", format: HTML}
+
+- name: live-street-address-management-sam-addresses
+  title: Live Street Address Management (SAM) addresses
+  notes: "Boston's Street Address Management (SAM) address list. Hosted on Analyze Boston; this entry links to the dataset page. See source for fields, license and updates."
+  organization: analyze-boston-external
+  topics: [housing-urban-development]
+  tags: [boston, analyze-boston, pointer]
+  source: Analyze Boston (data.boston.gov)
+  license: see source
+  kind: pointer
+  resources:
+    - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/live-street-address-management-sam-addresses", format: HTML}
+
+- name: census-tracts-boston-2020
+  title: Census Tracts Boston (2020)
+  notes: "2020 Census tract boundaries for Boston, the geography most Spark census analyses join on. Hosted on Analyze Boston; this entry links to the dataset page. See source for fields, license and updates."
+  organization: analyze-boston-external
+  topics: [government-politics-public-policy, immigration-community-social-services]
+  tags: [boston, analyze-boston, pointer]
+  source: Analyze Boston (data.boston.gov)
+  license: see source
+  kind: pointer
+  resources:
+    - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/census-tracts-boston-2020", format: HTML}
+
+- name: crime-incident-reports-august-2015-to-date-source-new-system
+  title: Crime incident reports (August 2015 to date)
+  notes: "Boston police crime incident reports, August 2015 to date (new system). Hosted on Analyze Boston; this entry links to the dataset page. See source for fields, license and updates."
+  organization: analyze-boston-external
+  topics: [criminal-justice-public-safety]
+  tags: [boston, analyze-boston, pointer]
+  source: Analyze Boston (data.boston.gov)
+  license: see source
+  kind: pointer
+  resources:
+    - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/crime-incident-reports-august-2015-to-date-source-new-system", format: HTML}
+
+- name: rentsmart
+  title: RentSmart
+  notes: "RentSmart rental housing data. Hosted on Analyze Boston; this entry links to the dataset page. See source for fields, license and updates."
+  organization: analyze-boston-external
+  topics: [housing-urban-development]
+  tags: [boston, analyze-boston, pointer]
+  source: Analyze Boston (data.boston.gov)
+  license: see source
+  kind: pointer
+  resources:
+    - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/rentsmart", format: HTML}
+
+- name: approved-building-permits
+  title: Approved building permits
+  notes: "Approved building permits in Boston. Hosted on Analyze Boston; this entry links to the dataset page. See source for fields, license and updates."
+  organization: analyze-boston-external
+  topics: [housing-urban-development, business-economy-work]
+  tags: [boston, analyze-boston, pointer]
+  source: Analyze Boston (data.boston.gov)
+  license: see source
+  kind: pointer
+  resources:
+    - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/approved-building-permits", format: HTML}
+
+- name: income-restricted-housing
+  title: Income-restricted housing
+  notes: "Income-restricted housing in Boston. Hosted on Analyze Boston; this entry links to the dataset page. See source for fields, license and updates."
+  organization: analyze-boston-external
+  topics: [housing-urban-development]
+  tags: [boston, analyze-boston, pointer]
+  source: Analyze Boston (data.boston.gov)
+  license: see source
+  kind: pointer
+  resources:
+    - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/income-restricted-housing", format: HTML}
+
+- name: climate-ready-boston-social-vulnerability
+  title: Climate Ready Boston social vulnerability
+  notes: "Social vulnerability data from Climate Ready Boston. Hosted on Analyze Boston; this entry links to the dataset page. See source for fields, license and updates."
+  organization: analyze-boston-external
+  topics: [environment-sustainability, health-medicine-wellbeing]
+  tags: [boston, analyze-boston, pointer]
+  source: Analyze Boston (data.boston.gov)
+  license: see source
+  kind: pointer
+  resources:
+    - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/climate-ready-boston-social-vulnerability", format: HTML}
+
+- name: employee-earnings-report
+  title: Employee earnings report
+  notes: "City of Boston employee earnings report. Hosted on Analyze Boston; this entry links to the dataset page. See source for fields, license and updates."
+  organization: analyze-boston-external
+  topics: [government-politics-public-policy, business-economy-work]
+  tags: [boston, analyze-boston, pointer]
+  source: Analyze Boston (data.boston.gov)
+  license: see source
+  kind: pointer
+  resources:
+    - {name: Dataset page on Analyze Boston, url: "https://data.boston.gov/dataset/employee-earnings-report", format: HTML}
+
+# ---------------- POINTERS (external-sources) ----------------
+- name: us-census-american-community-survey
+  title: US Census American Community Survey
+  notes: "American Community Survey data from the US Census Bureau. This entry links to data.census.gov. See source."
+  organization: external-sources
+  topics: [government-politics-public-policy, immigration-community-social-services]
+  tags: [census, acs, demographics, pointer]
+  source: US Census Bureau
+  license: see source
+  kind: pointer
+  resources:
+    - {name: data.census.gov, url: "https://data.census.gov", format: HTML}
+
+- name: mbta-open-data-gtfs
+  title: MBTA open data and GTFS
+  notes: "MBTA / MassDOT open data portal and MBTA GTFS developer feeds. This entry links to the pages. See source."
+  organization: external-sources
+  topics: [housing-urban-development]
+  tags: [mbta, transit, gtfs, pointer]
+  source: MBTA / MassDOT
+  license: see source
+  kind: pointer
+  resources:
+    - {name: MBTA-MassDOT open data portal, url: "https://mbta-massdot.opendata.arcgis.com", format: HTML}
+    - {name: MBTA GTFS developer page, url: "https://www.mbta.com/developers/gtfs", format: HTML}
+
+- name: bluebikes-system-data
+  title: Bluebikes system data
+  notes: "Bluebikes bike-share system data. This entry links to the system data page. See source."
+  organization: external-sources
+  topics: [environment-sustainability, housing-urban-development]
+  tags: [bluebikes, bike-share, transit, pointer]
+  source: Bluebikes
+  license: see source
+  kind: pointer
+  resources:
+    - {name: Bluebikes system data, url: "https://bluebikes.com/system-data", format: HTML}
