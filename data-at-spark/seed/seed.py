@@ -159,6 +159,8 @@ def main():
             print(f"org     CREATE {o['name']}")
             changes += 1
             cur = {"id": None} if a.dry_run else c.call("organization_create", name=o["name"], **w)
+            if cur is None:
+                sys.exit(f"organization_create returned nothing for {o['name']}")
         else:
             print(f"org     ok     {o['name']}")
         org_ids[o["name"]] = cur["id"]
